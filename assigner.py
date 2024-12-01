@@ -211,6 +211,14 @@ def get_formatted_students_sites_table(definitions_filename, input_filename):
 def main():
     #b = 3
 
+    import socket
+    hostname = socket.gethostname()
+    print(hostname)
+    if "jupyter" in hostname:
+        print("Running in a Jupyter context!! Stuff is definitely not about to work")
+    else:
+        print("Ok stuff might work")
+
     #############################
 
     parser = argparse.ArgumentParser()
