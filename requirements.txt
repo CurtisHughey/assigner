@@ -1,0 +1,7 @@
+munkres
+pandas
+numpy
+openpyxl
+regex
+argparse
+matplotlib

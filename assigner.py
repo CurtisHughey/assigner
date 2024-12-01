@@ -53,7 +53,7 @@ def graph_function(b, skew, maximum):
     
     
     #plt.plot(x, y)
-    plt.show()
+    plt.show()  # This just doesn't seem to work in Jupyter... ok
     
     return skew_slider.val, steepness_slider.val
 
@@ -209,15 +209,13 @@ def get_formatted_students_sites_table(definitions_filename, input_filename):
 
 
 def main():
-    #b = 3
-
     import socket
     hostname = socket.gethostname()
     print(hostname)
     if "jupyter" in hostname:
-        print("Running in a Jupyter context!! Stuff is definitely not about to work")
+        print("Running in a Jupyter context!!")
     else:
-        print("Ok stuff might work")
+        print("Probably running in a command-line context")
 
     #############################
 
