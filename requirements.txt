@@ -5,4 +5,3 @@ openpyxl
 regex
 argparse
 matplotlib
-os
