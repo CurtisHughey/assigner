@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# pip3 install munkres pandas numpy openpyxl regex argparse matplotlib
+# pip3 install munkres pandas numpy openpyxl regex argparse matplotlib os
 
 from munkres import Munkres, print_matrix
 
@@ -11,7 +11,9 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
 import math
 import argparse
+import os
 
+OUTPUT_PREPEND = "OUTPUT_"
 
 def weight_function(x, a, b, maximum):
     return maximum / (1 + ((maximum/x)**a - 1) ** b)
@@ -67,7 +69,7 @@ def weight_input(df, b, skew):
 
     a, b = graph_function(b, skew, maximum)
 
-    print("================\na,b: {}, {}\n================".format(a, b))
+    #print("================\na,b: {}, {}\n================".format(a, b))
 
     curried_function = lambda x: weight_function(x, a, b, maximum) 
 
@@ -81,7 +83,6 @@ def resolve_column_names(df):
 
     multiplier_fmt = r"\(x\d+\)"
     for c in df:
-        print(c)
         m = re.search(multiplier_fmt, c)
         
         if m:
@@ -111,20 +112,20 @@ def do_munkres(df):
 
     # Use Munkres
     m = Munkres()
-    print("=" * 40)
+    #print("=" * 40)
     indices = m.compute(matrix)
 
-    print_matrix(matrix)
+    #print_matrix(matrix)
 
-    print("=" * 40)
+    #print("=" * 40)
 
     total = 0
     for r, c in indices:
         total += master_matrix[r][c]
-        print("({}, {}) -> {}".format(r, c, master_matrix[r][c]))
+        #print("({}, {}) -> {}".format(r, c, master_matrix[r][c]))
 
-    print(indices)
-    print(total)
+    #print(indices)
+    #print(total)
 
     return indices
 
@@ -141,12 +142,12 @@ def prep_output(df, df_output, original_name_dict, indices):
 
 
     for r, c in indices:
-        r = r
-        c = c  # Adjusting for the row and column names  (TODO guess we don't need to do this anymore)
+        #r = r
+        #c = c  # Adjusting for the row and column names  (TODO guess we don't need to do this anymore)
 
         # Now we look up in matrix for the corresponding row and column. Then we take that column and look up in the master_df (we had created column copies)
         column = df.columns[c]
-        print(original_name_dict.get(column, "NONE"))
+        #print(original_name_dict.get(column, "NONE"))
 
         actual_column_name = original_name_dict.get(column, column)  # Attempt a lookup, otherwise it was unchanged
 
@@ -168,7 +169,7 @@ def get_formatted_students_sites_table(definitions_filename, input_filename):
     # Reads the definitions file (columns of name, long name (survey name), and number of slots), returns a tuple of dicts: name_lookup which allows you to look up the short name from the long name, and preferences_lookup, which allows you to look up the formatted column of slots we want for the next step
     df_definitions = pd.read_excel(definitions_filename)
     
-    print(df_definitions)
+    #print(df_definitions)
     
     preferences_lookup = {}
     for name, slots in zip(df_definitions["Name"], df_definitions["Slots"]):
@@ -208,25 +209,60 @@ def get_formatted_students_sites_table(definitions_filename, input_filename):
     return df
 
 
+def get_filename(required_string, description, flag):
+    filename = ""
+    dirlist = os.listdir()
+    for f in dirlist:
+        if os.path.isfile(f) and required_string in f.lower() and ".xlsx" in f.lower():
+            filename = f
+            print("No {} file explicitly provided w/ {}, using {}".format(description, flag, filename))
+            break
+    else:
+        print("Couldn't figure out which {} file to use. Make sure it it uploaded and then provide the name".format(description))
+        while True:
+            filename = input("Enter the {} file name: ".format(description))
+            if os.path.isfile(filename):
+                break
+            else:
+                print("Incorrect {} file name, try again".format(description))
+    return filename
+
 def main():
     import socket
     hostname = socket.gethostname()
-    print(hostname)
+    print("Hostname: {}".format(hostname))
     if "jupyter" in hostname:
         print("Running in a Jupyter context!!")
     else:
-        print("Probably running in a command-line context")
+        print("Probably running in a normal command-line context")
+
+    print("="*50)
 
     #############################
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input-file", type=str, required=True, help="Input file")
-    parser.add_argument("--definition-file", type=str, required=True, help="Definitions file")
-    parser.add_argument("--output-file", type=str, required=True, help="Output file")
+    parser.add_argument("--input-file", type=str, required=False, default="", help="Input file")
+    parser.add_argument("--definition-file", type=str, required=False, default="", help="Definitions file")
+    parser.add_argument("--output-file", type=str, required=False, default="", help="Output file")
     parser.add_argument("--steepness", type=int, required=False, default=3, help="Steepness of weight curve")
     parser.add_argument("--skew", type=float, required=False, default=0.5, help="Skew of the weight curve (between 0 and 1)")
     args = parser.parse_args()
 
+    # If the input file, definition file, and/or output file weren't provided, try to figure out the default. If can't figure out, prompt the user
+    if not args.definition_file:
+        args.definition_file = get_filename("definition", "definition", "--definition-file")
+        print("="*10)
+    if not args.input_file:
+        args.input_file = get_filename("preferences", "input", "--input-file")
+        print("="*10)
+    if not args.output_file:
+        args.output_file = "{}{}".format(OUTPUT_PREPEND, args.input_file)
+        print("Choosing default output file name {}".format(args.output_file))
+        print("="*10)
+
+    print("="*50)
+    print("Running program...")
+                
     #############################
 
     # Ok it's crazy I have three different df's lol
@@ -245,6 +281,8 @@ def main():
 
     df_master.to_excel(args.output_file, index=False)
 
+    print("="*50)
+    print("Success! Output is in {}".format(args.output_file))
     
 if __name__ == "__main__":
     main()
