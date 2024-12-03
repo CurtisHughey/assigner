@@ -240,13 +240,23 @@ def main():
 
     #############################
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--input-file", type=str, required=False, default="", help="Input file")
-    parser.add_argument("--definition-file", type=str, required=False, default="", help="Definitions file")
-    parser.add_argument("--output-file", type=str, required=False, default="", help="Output file")
-    parser.add_argument("--steepness", type=int, required=False, default=3, help="Steepness of weight curve")
-    parser.add_argument("--skew", type=float, required=False, default=0.5, help="Skew of the weight curve (between 0 and 1)")
-    args = parser.parse_args()
+    # See if we're running in a command line context and that if we should attempt to parse command-line arguments
+    if not "jupyter" in hostname:
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--input-file", type=str, required=False, default="", help="Input file")
+        parser.add_argument("--definition-file", type=str, required=False, default="", help="Definitions file")
+        parser.add_argument("--output-file", type=str, required=False, default="", help="Output file")
+        parser.add_argument("--steepness", type=int, required=False, default=3, help="Steepness of weight curve")
+        parser.add_argument("--skew", type=float, required=False, default=0.5, help="Skew of the weight curve (between 0 and 1)")
+        args = parser.parse_args()
+    else:
+        # Otherwise, set it to a bunch of nones
+        args = argparse.Namespace()
+        args.input_file = ""
+        args.definition_file = ""
+        args.output_file = ""
+        args.steepness = 3
+        args.skew = 0.5
 
     # If the input file, definition file, and/or output file weren't provided, try to figure out the default. If can't figure out, prompt the user
     if not args.definition_file:
@@ -286,3 +296,4 @@ def main():
     
 if __name__ == "__main__":
     main()
+
