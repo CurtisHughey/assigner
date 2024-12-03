@@ -218,7 +218,7 @@ def get_filename(required_string, description, flag):
             print("No {} file explicitly provided w/ {}, using {}".format(description, flag, filename))
             break
     else:
-        print("Couldn't figure out which {} file to use. Make sure it it uploaded and then provide the name".format(description))
+        print("Couldn't figure out which {} file to use. Make sure it is uploaded and then provide the name".format(description))
         while True:
             filename = input("Enter the {} file name: ".format(description))
             if os.path.isfile(filename):
