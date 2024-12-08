@@ -15,9 +15,9 @@ import os
 
 OUTPUT_PREPEND = "OUTPUT_"
 
+
 def weight_function(x, a, b, maximum):
     return maximum / (1 + ((maximum/x)**a - 1) ** b)
-
 
 
 def calc_midpoint(c, m):
@@ -53,16 +53,16 @@ def graph_function(b, skew, maximum):
     skew_slider.on_changed(sliders_on_changed)    
     steepness_slider.on_changed(sliders_on_changed)
     
-    
-    #plt.plot(x, y)
     plt.show()  # This just doesn't seem to work in Jupyter... ok
     
     return skew_slider.val, steepness_slider.val
+
 
 def drop_names(df):
     names = df[df.columns[0]].values
     df = df.drop(df.columns[0], axis=1)
     return df
+
 
 def weight_input(df, b, skew):
     maximum = df.max(axis=1)[0]  # Might want all the max's...
@@ -112,22 +112,14 @@ def do_munkres(df):
 
     # Use Munkres
     m = Munkres()
-    #print("=" * 40)
     indices = m.compute(matrix)
-
-    #print_matrix(matrix)
-
-    #print("=" * 40)
 
     total = 0
     for r, c in indices:
         total += master_matrix[r][c]
-        #print("({}, {}) -> {}".format(r, c, master_matrix[r][c]))
-
-    #print(indices)
-    #print(total)
 
     return indices
+
 
 # Now for the cleared out matrix, alert if the student and site have matched
 def prep_output(df, df_output, original_name_dict, indices):
@@ -142,12 +134,8 @@ def prep_output(df, df_output, original_name_dict, indices):
 
 
     for r, c in indices:
-        #r = r
-        #c = c  # Adjusting for the row and column names  (TODO guess we don't need to do this anymore)
-
         # Now we look up in matrix for the corresponding row and column. Then we take that column and look up in the master_df (we had created column copies)
         column = df.columns[c]
-        #print(original_name_dict.get(column, "NONE"))
 
         actual_column_name = original_name_dict.get(column, column)  # Attempt a lookup, otherwise it was unchanged
 
@@ -226,6 +214,7 @@ def get_filename(required_string, description, flag):
             else:
                 print("Could not find {}, try again".format(description))
     return filename
+
 
 def main():
     import socket
