@@ -224,7 +224,7 @@ def get_filename(required_string, description, flag):
             if os.path.isfile(filename):
                 break
             else:
-                print("Incorrect {} file name, try again".format(description))
+                print("Could not find {}, try again".format(description))
     return filename
 
 def main():
