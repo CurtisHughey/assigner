@@ -15,6 +15,13 @@ import os
 
 OUTPUT_PREPEND = "OUTPUT_"
 
+PROG_NAME = "ASSIGNER"
+MAJOR_VERSION = 1
+MINOR_VERSION = 0
+PATCH_NUMBER = 0
+
+DEFAULT_STEEPNESS = 3
+DEFAULT_SKEW = 0.5
 
 def weight_function(x, a, b, maximum):
     return maximum / (1 + ((maximum/x)**a - 1) ** b)
@@ -219,24 +226,30 @@ def get_filename(required_string, description, flag):
 def main():
     import socket
     hostname = socket.gethostname()
+    
+    print("{} {}.{}.{}".format(PROG_NAME, MAJOR_VERSION, MINOR_VERSION, PATCH_NUMBER))
+    
     print("Hostname: {}".format(hostname))
+    running_in_jupyter = False
     if "jupyter" in hostname:
         print("Running in a Jupyter context!!")
+        running_in_jupyter = True
     else:
         print("Probably running in a normal command-line context")
+        running_in_jupyter = False
 
     print("="*50)
 
     #############################
 
     # See if we're running in a command line context and that if we should attempt to parse command-line arguments
-    if not "jupyter" in hostname:
+    if not running_in_jupyter:
         parser = argparse.ArgumentParser()
         parser.add_argument("--input-file", type=str, required=False, default="", help="Input file")
         parser.add_argument("--definition-file", type=str, required=False, default="", help="Definitions file")
         parser.add_argument("--output-file", type=str, required=False, default="", help="Output file")
-        parser.add_argument("--steepness", type=int, required=False, default=3, help="Steepness of weight curve")
-        parser.add_argument("--skew", type=float, required=False, default=0.5, help="Skew of the weight curve (between 0 and 1)")
+        parser.add_argument("--steepness", type=int, required=False, default=DEFAULT_STEEPNESS, help="Steepness of weight curve")
+        parser.add_argument("--skew", type=float, required=False, default=DEFAULT_SKEW, help="Skew of the weight curve (between 0 and 1)")
         args = parser.parse_args()
     else:
         # Otherwise, set it to a bunch of nones
@@ -244,8 +257,8 @@ def main():
         args.input_file = ""
         args.definition_file = ""
         args.output_file = ""
-        args.steepness = 3
-        args.skew = 0.5
+        args.steepness = DEFAULT_STEEPNESS
+        args.skew = DEFAULT_SKEW
 
     # If the input file, definition file, and/or output file weren't provided, try to figure out the default. If can't figure out, prompt the user
     if not args.definition_file:
