@@ -78,8 +78,6 @@ def weight_input(df, b, skew):
 
     a, b = graph_function(b, skew, maximum)
 
-    #print("================\na,b: {}, {}\n================".format(a, b))
-
     curried_function = lambda x: weight_function(x, a, b, maximum) 
 
     df = df.apply(curried_function, axis=1)
@@ -119,7 +117,6 @@ def do_munkres(df):
 
     master_matrix = matrix.copy()
 
-    # Use Munkres
     m = Munkres()
     indices = m.compute(matrix)
 
@@ -165,8 +162,6 @@ def get_formatted_students_sites_table(definitions_filename, input_filename):
 
     # Reads the definitions file (columns of name, long name (survey name), and number of slots), returns a tuple of dicts: name_lookup which allows you to look up the short name from the long name, and preferences_lookup, which allows you to look up the formatted column of slots we want for the next step
     df_definitions = pd.read_excel(definitions_filename)
-    
-    #print(df_definitions)
     
     preferences_lookup = {}
     for name, slots in zip(df_definitions["Name"], df_definitions["Slots"]):
