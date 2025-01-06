@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
-# pip3 install munkres pandas numpy openpyxl regex argparse matplotlib os
+# pip3 install munkres pandas numpy openpyxl regex argparse matplotlib
+
+# Binder link: https://mybinder.org/v2/gh/CurtisHughey/assigner/HEAD?labpath=assigner.ipynb
 
 from munkres import Munkres, print_matrix
 
