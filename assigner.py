@@ -86,7 +86,8 @@ def weight_input(df, b, skew):
     
     return df
     
-    
+
+# TODO I need to comment these functions
 def resolve_column_names(df):
     original_name_dict = {}
 
@@ -156,16 +157,18 @@ def prep_output(df, df_output, original_name_dict, indices):
 # Students on x axis
 # Sites on y axis. Sites are short name, and have number of slots in parentheses
 # Each intersection has the numeric ranking of the student for that site
-def get_formatted_students_sites_table(definitions_filename, input_filename):
+# HOWEVER. denylist_filename will override a student's ranking. If a student is denied a site, their ranking for that site will be overridden, and instead will be provided a special maximum value (TODO)
+def get_formatted_students_sites_table(definitions_filename, input_filename, denylist_filename):
 
-    data = {"Student": []}
+    data = {"Student": []}  # List of names, each of which is a list of preferences
+    denylist_dict = parse_denylist(denylist_filename)
 
     ####################################################################
 
     # Reads the definitions file (columns of name, long name (survey name), and number of slots), returns a tuple of dicts: name_lookup which allows you to look up the short name from the long name, and preferences_lookup, which allows you to look up the formatted column of slots we want for the next step
     df_definitions = pd.read_excel(definitions_filename)
     
-    preferences_lookup = {}
+    preferences_lookup = {}  # Points the long name to the short name with the (optional) number of slots
     for name, slots in zip(df_definitions["Name"], df_definitions["Slots"]):
         name = name.strip()
         if int(slots) == 1:
@@ -196,21 +199,26 @@ def get_formatted_students_sites_table(definitions_filename, input_filename):
         data["Student"].append(name)
         
         for idx, preference in enumerate(preferences):
-            data[preferences_lookup[preference]].append(idx+1)  # idx is 0-based, convert to start at 1
+            if preference in denylist_dict.get(name, []):  # Then this student isn't allowed to have this preference
+                print("FOUND illegal preference")
+                ranking = len(preferences)  # We just make it the max preference... I guess this is ok... it could still get assigned...
+            else:
+                ranking = idx + 1  # idx is 0-based, convert to start at 1
+        
+            data[preferences_lookup[preference]].append(ranking)
         
     df = pd.DataFrame(data)
     
     return df
 
 
-def handle_denylist(df, denylist_filename):
+# Returns a dict of the denylist
+def parse_denylist(denylist_filename):
     if not denylist_filename:
-        return df
+        return {}
     
     # Just two columns: names and then a semicolon-separated list of the (short) names of the places to deny the names to
     df_denylist = pd.read_excel(denylist_filename)
-
-    # Both of these tables (df and df_denylist) have the short names of the sites. HOWEVER, remember that df has the e.g. " (x2)" as well    
 
     deny_student_dict = {}
     
@@ -224,9 +232,8 @@ def handle_denylist(df, denylist_filename):
         
         deny_student_dict[name] = existing_deny_sites + new_deny_sites
 
-    print(deny_student_dict)
+    return deny_student_dict
 
-    return df
 
 def get_filename(required_string, description, flag, required=True):
     filename = ""
@@ -314,16 +321,14 @@ def main():
                 
     #############################
 
-    df_master = get_formatted_students_sites_table(args.definition_file, args.input_file)
+    df_master = get_formatted_students_sites_table(args.definition_file, args.input_file, args.denylist_file)
     df = df_master.copy()
-
+    
     #############################
 
-    df = drop_names(df)
+    df = drop_names(df) 
     df = weight_input(df, args.steepness, args.skew)
     df, original_name_dict = resolve_column_names(df)
-    # Now denylist students
-    df = handle_denylist(df, args.denylist_file)
     indices = do_munkres(df)
     prep_output(df, df_master, original_name_dict, indices)
 
