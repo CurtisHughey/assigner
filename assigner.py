@@ -15,12 +15,13 @@ import math
 import argparse
 import os
 import xlsxwriter  # Probably don't actually have to import lol
+import random
 
 OUTPUT_PREPEND = "OUTPUT_"
 
 PROG_NAME = "ASSIGNER"
 MAJOR_VERSION = 1
-MINOR_VERSION = 2
+MINOR_VERSION = 3
 PATCH_NUMBER = 0
 
 DEFAULT_STEEPNESS = 3
@@ -263,6 +264,22 @@ def get_filename(required_string, description, flag, required=True):
     return filename
 
 
+def shuffle_students(df):
+    temp = list(df.index)
+    original_permutation = temp[:]
+    permutation = temp
+    random.shuffle(permutation)
+    df = df.reindex(index=permutation)
+
+    return df, original_permutation
+
+
+def unshuffle_students(df, original_permutation):
+    df = df.reindex(index=original_permutation)
+    
+    return df
+
+
 def main():
     import socket
     hostname = socket.gethostname()
@@ -323,15 +340,17 @@ def main():
     #############################
 
     df_master = get_formatted_students_sites_table(args.definition_file, args.input_file, args.denylist_file)
+    df_master, original_permutation = shuffle_students(df_master)
     df = df_master.copy()
     
     #############################
 
-    df = drop_names(df)  
+    df = drop_names(df)
     df = weight_input(df, args.steepness, args.skew)
     df, original_name_dict = resolve_column_names(df)
     indices = do_munkres(df)
     prep_output(df, df_master, original_name_dict, indices)  # Modifies df_master
+    df_master = unshuffle_students(df_master, original_permutation)
 
     #############################
     
