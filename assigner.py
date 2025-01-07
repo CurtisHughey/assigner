@@ -203,6 +203,13 @@ def get_formatted_students_sites_table(definitions_filename, input_filename):
     return df
 
 
+def handle_denylist(df, denylist_filename):
+    if not denylist_filename:
+        return df
+    
+    
+
+
 def get_filename(required_string, description, flag, required=True):
     filename = ""
     dirlist = os.listdir()
@@ -298,6 +305,7 @@ def main():
     df = weight_input(df, args.steepness, args.skew)
     df, original_name_dict = resolve_column_names(df)
     # Now denylist students
+    df = handle_denylist(df, args.denylist_file)
     indices = do_munkres(df)
     prep_output(df, df_master, original_name_dict, indices)
 
