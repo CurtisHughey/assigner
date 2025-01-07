@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# pip3 install munkres pandas numpy openpyxl regex argparse matplotlib
+# pip3 install munkres pandas numpy regex argparse matplotlib XlsxWriter>=3.0.6
 
 # Binder link: https://mybinder.org/v2/gh/CurtisHughey/assigner/HEAD?labpath=assigner.ipynb
 
@@ -14,6 +14,7 @@ from matplotlib.widgets import Slider
 import math
 import argparse
 import os
+import xlsxwriter  # Probably don't actually have to import lol
 
 OUTPUT_PREPEND = "OUTPUT_"
 
@@ -200,7 +201,6 @@ def get_formatted_students_sites_table(definitions_filename, input_filename, den
         
         for idx, preference in enumerate(preferences):
             if preference in denylist_dict.get(name, []):  # Then this student isn't allowed to have this preference
-                print("FOUND illegal preference")
                 ranking = len(preferences)  # We just make it the max preference... I guess this is ok... it could still get assigned...
             else:
                 ranking = idx + 1  # idx is 0-based, convert to start at 1
@@ -326,15 +326,18 @@ def main():
     
     #############################
 
-    df = drop_names(df) 
+    df = drop_names(df)  
     df = weight_input(df, args.steepness, args.skew)
     df, original_name_dict = resolve_column_names(df)
     indices = do_munkres(df)
-    prep_output(df, df_master, original_name_dict, indices)
+    prep_output(df, df_master, original_name_dict, indices)  # Modifies df_master
 
     #############################
-
-    df_master.to_excel(args.output_file, index=False)
+    
+    with pd.ExcelWriter(args.output_file) as writer:
+        sheet_name = "Results"
+        df_master.to_excel(writer, sheet_name = sheet_name, index=False)
+        writer.sheets[sheet_name].autofit()
 
     print("="*50)
     print("Success! Output is in {}".format(args.output_file))
