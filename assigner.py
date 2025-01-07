@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
-# pip3 install munkres pandas numpy openpyxl regex argparse matplotlib os
+# pip3 install munkres pandas numpy openpyxl regex argparse matplotlib
+
+# Binder link: https://mybinder.org/v2/gh/CurtisHughey/assigner/HEAD?labpath=assigner.ipynb
 
 from munkres import Munkres, print_matrix
 
@@ -23,6 +25,7 @@ PATCH_NUMBER = 0
 DEFAULT_STEEPNESS = 3
 DEFAULT_SKEW = 0.5
 
+
 def weight_function(x, a, b, maximum):
     return maximum / (1 + ((maximum/x)**a - 1) ** b)
 
@@ -31,6 +34,7 @@ def calc_midpoint(c, m):
     return 1 / (math.log2(m/c))
 
 
+# Right now this is not interactive in Jupyter... that seems hard
 def graph_function(b, skew, maximum):
     axis_color = "lightgoldenrodyellow"
 
@@ -76,15 +80,14 @@ def weight_input(df, b, skew):
 
     a, b = graph_function(b, skew, maximum)
 
-    #print("================\na,b: {}, {}\n================".format(a, b))
-
     curried_function = lambda x: weight_function(x, a, b, maximum) 
 
     df = df.apply(curried_function, axis=1)
     
     return df
     
-    
+
+# TODO I need to comment these functions
 def resolve_column_names(df):
     original_name_dict = {}
 
@@ -117,7 +120,6 @@ def do_munkres(df):
 
     master_matrix = matrix.copy()
 
-    # Use Munkres
     m = Munkres()
     indices = m.compute(matrix)
 
@@ -155,18 +157,18 @@ def prep_output(df, df_output, original_name_dict, indices):
 # Students on x axis
 # Sites on y axis. Sites are short name, and have number of slots in parentheses
 # Each intersection has the numeric ranking of the student for that site
-def get_formatted_students_sites_table(definitions_filename, input_filename):
+# HOWEVER. denylist_filename will override a student's ranking. If a student is denied a site, their ranking for that site will be overridden, and instead will be provided a special maximum value (TODO)
+def get_formatted_students_sites_table(definitions_filename, input_filename, denylist_filename):
 
-    data = {"Student": []}
+    data = {"Student": []}  # List of names, each of which is a list of preferences
+    denylist_dict = parse_denylist(denylist_filename)
 
     ####################################################################
 
     # Reads the definitions file (columns of name, long name (survey name), and number of slots), returns a tuple of dicts: name_lookup which allows you to look up the short name from the long name, and preferences_lookup, which allows you to look up the formatted column of slots we want for the next step
     df_definitions = pd.read_excel(definitions_filename)
     
-    #print(df_definitions)
-    
-    preferences_lookup = {}
+    preferences_lookup = {}  # Points the long name to the short name with the (optional) number of slots
     for name, slots in zip(df_definitions["Name"], df_definitions["Slots"]):
         name = name.strip()
         if int(slots) == 1:
@@ -197,14 +199,43 @@ def get_formatted_students_sites_table(definitions_filename, input_filename):
         data["Student"].append(name)
         
         for idx, preference in enumerate(preferences):
-            data[preferences_lookup[preference]].append(idx+1)  # idx is 0-based, convert to start at 1
+            if preference in denylist_dict.get(name, []):  # Then this student isn't allowed to have this preference
+                print("FOUND illegal preference")
+                ranking = len(preferences)  # We just make it the max preference... I guess this is ok... it could still get assigned...
+            else:
+                ranking = idx + 1  # idx is 0-based, convert to start at 1
+        
+            data[preferences_lookup[preference]].append(ranking)
         
     df = pd.DataFrame(data)
     
     return df
 
 
-def get_filename(required_string, description, flag):
+# Returns a dict of the denylist
+def parse_denylist(denylist_filename):
+    if not denylist_filename:
+        return {}
+    
+    # Just two columns: names and then a semicolon-separated list of the (short) names of the places to deny the names to
+    df_denylist = pd.read_excel(denylist_filename)
+
+    deny_student_dict = {}
+    
+    for name, deny_sites in zip(df_denylist["Name"], df_denylist["Deny Sites (semicolon-separated)"]):
+        name = name.strip()
+        if name in deny_student_dict:
+            print("{} appears multiple times in the denylist spreadsheet... I'll combine the denylist but that might not be the behavior you want!".format(name))
+        
+        existing_deny_sites = deny_student_dict.get(name, [])  # Really arguable that we should be accommodating this...
+        new_deny_sites = [x.strip() for x in deny_sites.split(";")]
+        
+        deny_student_dict[name] = existing_deny_sites + new_deny_sites
+
+    return deny_student_dict
+
+
+def get_filename(required_string, description, flag, required=True):
     filename = ""
     dirlist = os.listdir()
     for f in dirlist:
@@ -215,11 +246,19 @@ def get_filename(required_string, description, flag):
     else:
         print("Couldn't figure out which {} file to use. Make sure it is uploaded and then provide the name".format(description))
         while True:
-            filename = input("Enter the {} file name: ".format(description))
+            if required:
+                filename = input("Enter the {} file name: ".format(description))
+            else:
+                print("This file is not required. Press <Enter> below if you don't want to pass one in")
+                filename = input("Enter the {} file name (<Enter> for none): ".format(description))
+                if not filename:  # If nothing was passed in, that's ok, we're done. But otherwise, we'll treat it as normal
+                    break
+            
             if os.path.isfile(filename):
                 break
             else:
-                print("Could not find {}, try again".format(description))
+                print("Could not find {}, try again".format(filename))
+            
     return filename
 
 
@@ -248,6 +287,7 @@ def main():
         parser.add_argument("--input-file", type=str, required=False, default="", help="Input file")
         parser.add_argument("--definition-file", type=str, required=False, default="", help="Definitions file")
         parser.add_argument("--output-file", type=str, required=False, default="", help="Output file")
+        parser.add_argument("--denylist-file", type=str, required=False, default="", help="Denylist file")
         parser.add_argument("--steepness", type=int, required=False, default=DEFAULT_STEEPNESS, help="Steepness of weight curve")
         parser.add_argument("--skew", type=float, required=False, default=DEFAULT_SKEW, help="Skew of the weight curve (between 0 and 1)")
         args = parser.parse_args()
@@ -257,6 +297,7 @@ def main():
         args.input_file = ""
         args.definition_file = ""
         args.output_file = ""
+        args.denylist_file = ""
         args.steepness = DEFAULT_STEEPNESS
         args.skew = DEFAULT_SKEW
 
@@ -271,19 +312,21 @@ def main():
         args.output_file = "{}{}".format(OUTPUT_PREPEND, args.input_file)
         print("Choosing default output file name {}".format(args.output_file))
         print("="*10)
+    if not args.denylist_file:
+        args.denylist_file = get_filename("denylist", "denylist", "--denylist-file", False)  # This may return an empty string if the user decides there should be no denylist file
+        print("="*10)
 
     print("="*50)
     print("Running program...")
                 
     #############################
 
-    # Ok it's crazy I have three different df's lol
-    df_master = get_formatted_students_sites_table(args.definition_file, args.input_file)
+    df_master = get_formatted_students_sites_table(args.definition_file, args.input_file, args.denylist_file)
     df = df_master.copy()
-
+    
     #############################
 
-    df = drop_names(df)
+    df = drop_names(df) 
     df = weight_input(df, args.steepness, args.skew)
     df, original_name_dict = resolve_column_names(df)
     indices = do_munkres(df)
