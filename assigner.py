@@ -207,8 +207,26 @@ def handle_denylist(df, denylist_filename):
     if not denylist_filename:
         return df
     
-    
+    # Just two columns: names and then a semicolon-separated list of the (short) names of the places to deny the names to
+    df_denylist = pd.read_excel(denylist_filename)
 
+    # Both of these tables (df and df_denylist) have the short names of the sites. HOWEVER, remember that df has the e.g. " (x2)" as well    
+
+    deny_student_dict = {}
+    
+    for name, deny_sites in zip(df_denylist["Name"], df_denylist["Deny Sites (semicolon-separated)"]):
+        name = name.strip()
+        if name in deny_student_dict:
+            print("{} appears multiple times in the denylist spreadsheet... I'll combine the denylist but that might not be the behavior you want!".format(name))
+        
+        existing_deny_sites = deny_student_dict.get(name, [])  # Really arguable that we should be accommodating this...
+        new_deny_sites = [x.strip() for x in deny_sites.split(";")]
+        
+        deny_student_dict[name] = existing_deny_sites + new_deny_sites
+
+    print(deny_student_dict)
+
+    return df
 
 def get_filename(required_string, description, flag, required=True):
     filename = ""
