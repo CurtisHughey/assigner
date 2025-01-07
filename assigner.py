@@ -176,6 +176,7 @@ def get_formatted_students_sites_table(definitions_filename, input_filename, den
             key = name
         else:
             key = "{} (x{})".format(name, int(slots))
+        key = "   {}   ".format(key)  # Adding space before and after... XlsxWriter's autofit doesn't work awesome
         data[key] = []
         preferences_lookup[name] = key     
     
