@@ -25,6 +25,7 @@ PATCH_NUMBER = 0
 DEFAULT_STEEPNESS = 3
 DEFAULT_SKEW = 0.5
 
+
 def weight_function(x, a, b, maximum):
     return maximum / (1 + ((maximum/x)**a - 1) ** b)
 
@@ -33,6 +34,7 @@ def calc_midpoint(c, m):
     return 1 / (math.log2(m/c))
 
 
+# Right now this is not interactive in Jupyter... that seems hard
 def graph_function(b, skew, maximum):
     axis_color = "lightgoldenrodyellow"
 
@@ -201,7 +203,7 @@ def get_formatted_students_sites_table(definitions_filename, input_filename):
     return df
 
 
-def get_filename(required_string, description, flag):
+def get_filename(required_string, description, flag, required=True):
     filename = ""
     dirlist = os.listdir()
     for f in dirlist:
@@ -212,11 +214,19 @@ def get_filename(required_string, description, flag):
     else:
         print("Couldn't figure out which {} file to use. Make sure it is uploaded and then provide the name".format(description))
         while True:
-            filename = input("Enter the {} file name: ".format(description))
+            if required:
+                filename = input("Enter the {} file name: ".format(description))
+            else:
+                print("This file is not required. Press <Enter> below if you don't want to pass one in")
+                filename = input("Enter the {} file name (<Enter> for none): ".format(description))
+                if not filename:  # If nothing was passed in, that's ok, we're done. But otherwise, we'll treat it as normal
+                    break
+            
             if os.path.isfile(filename):
                 break
             else:
-                print("Could not find {}, try again".format(description))
+                print("Could not find {}, try again".format(filename))
+            
     return filename
 
 
@@ -245,6 +255,7 @@ def main():
         parser.add_argument("--input-file", type=str, required=False, default="", help="Input file")
         parser.add_argument("--definition-file", type=str, required=False, default="", help="Definitions file")
         parser.add_argument("--output-file", type=str, required=False, default="", help="Output file")
+        parser.add_argument("--denylist-file", type=str, required=False, default="", help="Denylist file")
         parser.add_argument("--steepness", type=int, required=False, default=DEFAULT_STEEPNESS, help="Steepness of weight curve")
         parser.add_argument("--skew", type=float, required=False, default=DEFAULT_SKEW, help="Skew of the weight curve (between 0 and 1)")
         args = parser.parse_args()
@@ -254,6 +265,7 @@ def main():
         args.input_file = ""
         args.definition_file = ""
         args.output_file = ""
+        args.denylist_file = ""
         args.steepness = DEFAULT_STEEPNESS
         args.skew = DEFAULT_SKEW
 
@@ -268,13 +280,15 @@ def main():
         args.output_file = "{}{}".format(OUTPUT_PREPEND, args.input_file)
         print("Choosing default output file name {}".format(args.output_file))
         print("="*10)
+    if not args.denylist_file:
+        args.denylist_file = get_filename("denylist", "denylist", "--denylist-file", False)  # This may return an empty string if the user decides there should be no denylist file
+        print("="*10)
 
     print("="*50)
     print("Running program...")
                 
     #############################
 
-    # Ok it's crazy I have three different df's lol
     df_master = get_formatted_students_sites_table(args.definition_file, args.input_file)
     df = df_master.copy()
 
@@ -283,6 +297,7 @@ def main():
     df = drop_names(df)
     df = weight_input(df, args.steepness, args.skew)
     df, original_name_dict = resolve_column_names(df)
+    # Now denylist students
     indices = do_munkres(df)
     prep_output(df, df_master, original_name_dict, indices)
 
