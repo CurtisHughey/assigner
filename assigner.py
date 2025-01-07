@@ -337,7 +337,7 @@ def main():
     
     with pd.ExcelWriter(args.output_file) as writer:
         sheet_name = "Results"
-        df_master.to_excel(writer, sheet_name = sheet_name, index=False)
+        df_master.to_excel(writer, sheet_name = sheet_name, index=False, freeze_panes=(1,1))
         writer.sheets[sheet_name].autofit()
 
     print("="*50)
