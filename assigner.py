@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# pip3 install munkres pandas numpy regex argparse matplotlib XlsxWriter>=3.0.6
+# pip3 install munkres pandas numpy regex argparse matplotlib openpyxl XlsxWriter>=3.0.6
 
 # Binder link: https://mybinder.org/v2/gh/CurtisHughey/assigner/HEAD?labpath=assigner.ipynb
 
@@ -16,6 +16,7 @@ import argparse
 import os
 import xlsxwriter  # Probably don't actually have to import lol
 import random
+import openpyxl
 
 OUTPUT_PREPEND = "OUTPUT_"
 

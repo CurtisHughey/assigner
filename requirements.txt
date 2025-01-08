@@ -4,4 +4,5 @@ numpy
 regex
 argparse
 matplotlib
+openpyxl
 XlsxWriter>=3.0.6
