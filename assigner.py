@@ -23,7 +23,7 @@ OUTPUT_PREPEND = "OUTPUT_"
 PROG_NAME = "ASSIGNER"
 MAJOR_VERSION = 1
 MINOR_VERSION = 3
-PATCH_NUMBER = 0
+PATCH_NUMBER = 1
 
 DEFAULT_STEEPNESS = 3
 DEFAULT_SKEW = 0.5
@@ -266,17 +266,41 @@ def get_filename(required_string, description, flag, required=True):
 
 
 def shuffle_students(df):
-    temp = list(df.index)
-    original_permutation = temp[:]
-    permutation = temp
+    permutation = list(df.index)
     random.shuffle(permutation)
     df = df.reindex(index=permutation)
+    df = df.reset_index(drop=True)  # This was an annoying line to figure out
 
-    return df, original_permutation
+    return df, permutation
 
+
+# permutation is a zero-based list
+# e.g.: [1,2,0] sends [a,b,c] to [c,a,b]
+# invert_permutation finds the inverse
+# so [1,2,0] -> [(0->1), (1->2), (2->0)] -> [(1->0), (2->1), (0->2)] -> [2,0,1]
+# [1,2,3,0] -> [(0->1), (1->2), (2->3), (3->0)] -> [(1->0), (2->1), (3->2), (0->3)] -> [3,0,1,2]
+def invert_permutation(permutation):
+    
+    tuple_permutation = []
+    for i in range(len(permutation)):
+        tuple_permutation.append((i, permutation[i]))
+    
+    inverted_tuple_permutation = []
+    for x, y in tuple_permutation:
+        inverted_tuple_permutation.append((y, x))
+    
+    # Sort by the domain (this is the last step)
+    inverted_tuple_permutation = sorted(inverted_tuple_permutation, key = lambda x: x[0])
+    
+    # And then select the second value in the tuple
+    inverted_permutation = [i for (_, i) in inverted_tuple_permutation]
+    
+    return inverted_permutation
+    
 
 def unshuffle_students(df, original_permutation):
-    df = df.reindex(index=original_permutation)
+    inverted_permutation = invert_permutation(original_permutation)
+    df = df.reindex(index=inverted_permutation)
     
     return df
 
