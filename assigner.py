@@ -104,7 +104,7 @@ def resolve_column_names(df):
             core = c[:m.start()].strip()
             
             # Now we have the core name and the number of times the column should be replicated
-            if number >= 1:
+            if number >= 0:  # Allowing for zero
                 for i in range(number):
                     new_column = "{} (#{})".format(core, i+1)
                     #df[new_column] = df[c]
