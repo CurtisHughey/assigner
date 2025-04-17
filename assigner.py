@@ -243,7 +243,8 @@ def get_filename(required_string, description, flag, required=True):
     filename = ""
     dirlist = os.listdir()
     for f in dirlist:
-        if os.path.isfile(f) and required_string in f.lower() and ".xlsx" in f.lower():
+        # Make sure it's an xlsx file with the required string. Also make sure that OUTPUT_PREPEND isn't in it, we'd never want that
+        if os.path.isfile(f) and required_string in f.lower() and ".xlsx" in f.lower() and OUTPUT_PREPEND not in f:
             filename = f
             print("No {} file explicitly provided w/ {}, using {}".format(description, flag, filename))
             break
