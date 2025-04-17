@@ -17,13 +17,14 @@ import os
 import xlsxwriter  # Probably don't actually have to import lol
 import random
 import openpyxl
+import socket
 
 OUTPUT_PREPEND = "OUTPUT_"
 
 PROG_NAME = "ASSIGNER"
 MAJOR_VERSION = 1
-MINOR_VERSION = 3
-PATCH_NUMBER = 1
+MINOR_VERSION = 4
+PATCH_NUMBER = 0
 
 DEFAULT_STEEPNESS = 3
 DEFAULT_SKEW = 0.5
@@ -306,7 +307,6 @@ def unshuffle_students(df, original_permutation):
 
 
 def main():
-    import socket
     hostname = socket.gethostname()
     
     print("{} {}.{}.{}".format(PROG_NAME, MAJOR_VERSION, MINOR_VERSION, PATCH_NUMBER))
